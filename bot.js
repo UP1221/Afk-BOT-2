@@ -5,11 +5,41 @@ const PORT = Number(process.env.MC_PORT || 25565);
 const USERNAME = process.env.BOT_USERNAME || 'MaxwolHelper';
 const AUTH = process.env.MC_AUTH || 'offline';
 
+// Tune these in Render environment variables if needed.
+const MOVE_INTERVAL_MS = Number(process.env.MOVE_INTERVAL_MS || 45000);
+const RESPAWN_DELAY_MS = Number(process.env.RESPAWN_DELAY_MS || 1500);
+
 let bot;
 let reconnectTimer;
 let movementTimer;
+let respawnTimer;
 let reconnectDelay = 5000;
 let stopping = false;
+let respawnPending = false;
+
+function clearBotTimers() {
+  clearInterval(movementTimer);
+  clearTimeout(respawnTimer);
+  movementTimer = null;
+  respawnTimer = null;
+  respawnPending = false;
+}
+
+function startAntiAfkMovement() {
+  clearInterval(movementTimer);
+
+  movementTimer = setInterval(() => {
+    if (!bot || !bot.entity || stopping) return;
+
+    // Short jump pulse; this may not satisfy every server's AFK rules.
+    bot.setControlState('jump', true);
+    setTimeout(() => {
+      if (bot && bot.entity && !stopping) {
+        bot.setControlState('jump', false);
+      }
+    }, 300);
+  }, MOVE_INTERVAL_MS);
+}
 
 function connect() {
   if (stopping) return;
@@ -24,20 +54,28 @@ function connect() {
   });
 
   bot.once('spawn', () => {
-    console.log(`[bot] Joined successfully as ${bot.username}.`);
-
+    console.log(`[bot] Online as ${bot.username}.`);
     reconnectDelay = 5000;
-    clearInterval(movementTimer);
+    respawnPending = false;
+    startAntiAfkMovement();
+  });
 
-    // Brief movement every 60 seconds. Server rules may prohibit AFK bots.
-    movementTimer = setInterval(() => {
-      if (!bot || !bot.entity) return;
+  bot.on('death', () => {
+    console.log('[bot] Died; attempting to respawn...');
+    if (respawnPending || stopping) return;
+    respawnPending = true;
 
-      bot.setControlState('jump', true);
-      setTimeout(() => {
-        if (bot && bot.entity) bot.setControlState('jump', false);
-      }, 300);
-    }, 60000);
+    respawnTimer = setTimeout(() => {
+      if (stopping || !bot) return;
+      try {
+        bot.respawn();
+        console.log('[bot] Respawn requested.');
+      } catch (error) {
+        console.error('[bot] Respawn request failed:', error.message);
+      }
+      // Allow another attempt if the server does not emit spawn promptly.
+      setTimeout(() => { respawnPending = false; }, 5000);
+    }, RESPAWN_DELAY_MS);
   });
 
   bot.on('kicked', reason => {
@@ -50,9 +88,7 @@ function connect() {
 
   bot.on('end', () => {
     console.log('[bot] Disconnected.');
-
-    clearInterval(movementTimer);
-    movementTimer = null;
+    clearBotTimers();
 
     if (stopping) return;
 
@@ -66,7 +102,7 @@ function connect() {
 function shutdown() {
   stopping = true;
   clearTimeout(reconnectTimer);
-  clearInterval(movementTimer);
+  clearBotTimers();
   if (bot) bot.quit();
   process.exit(0);
 }
