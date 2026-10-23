@@ -1,0 +1,16 @@
+services:
+  - type: worker
+    name: minecraft-afk-bot
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MC_HOST
+        value: maxwol.mcsh.gg
+      - key: MC_PORT
+        value: "25565"
+      - key: BOT_USERNAME
+        value: MaxwolHelper
+      - key: MC_AUTH
+        value: offline

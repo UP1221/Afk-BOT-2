@@ -1,0 +1,16 @@
+{
+  "name": "minecraft-afk-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A small Mineflayer bot with reconnect handling",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "mineflayer": "^4.32.0"
+  }
+}
