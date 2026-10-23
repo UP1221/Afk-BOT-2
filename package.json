@@ -1,8 +1,8 @@
 {
   "name": "minecraft-afk-bot",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
-  "description": "Mineflayer bot with auto-respawn, periodic movement, and reconnect handling",
+  "description": "Mineflayer bot with auto-respawn, safe idle behavior, and reconnect handling",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"

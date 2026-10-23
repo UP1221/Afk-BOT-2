@@ -14,7 +14,9 @@ services:
         value: MaxwolHelper
       - key: MC_AUTH
         value: offline
-      - key: MOVE_INTERVAL_MS
-        value: "45000"
+      - key: RECONNECT_MIN_MS
+        value: "5000"
+      - key: RECONNECT_MAX_MS
+        value: "60000"
       - key: RESPAWN_DELAY_MS
         value: "1500"
